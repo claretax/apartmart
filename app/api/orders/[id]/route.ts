@@ -1,86 +1,34 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { AuthResult, getCurrentUser } from "@/lib/auth"
+import { getDatabase } from "@/lib/mongodb"
+import { ObjectId } from "mongodb"
+import { sanitizeOrder } from "@/lib/models/order"
 
-// Mock orders database (same as in the main orders route)
-const orders = [
-  {
-    id: "order-1",
-    userId: "user-1",
-    items: [
-      { productId: "prod-1", name: "Unicorn Stationery Set", quantity: 2, price: 899 },
-      { productId: "prod-7", name: "Gel Pens Set", quantity: 1, price: 299 },
-      { productId: "prod-5", name: "Office Essentials Kit", quantity: 1, price: 999 },
-    ],
-    total: 2299,
-    status: "delivered",
-    deliveryAddress: "Tower A, Floor 5, Flat 502",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-18",
-    agentId: "user-2",
-  },
-  {
-    id: "order-2",
-    userId: "user-1",
-    items: [
-      { productId: "prod-2", name: "Executive Stationery Kit", quantity: 1, price: 1299 },
-      { productId: "prod-7", name: "Gel Pens Set", quantity: 2, price: 299 },
-    ],
-    total: 1499,
-    status: "shipped",
-    deliveryAddress: "Tower A, Floor 5, Flat 502",
-    createdAt: "2024-01-20",
-    updatedAt: "2024-01-21",
-    agentId: "user-2",
-  },
-  {
-    id: "order-3",
-    userId: "user-4",
-    items: [
-      { productId: "prod-6", name: "Bluetooth Speaker", quantity: 1, price: 2499 },
-      { productId: "prod-4", name: "Premium Notebook Set", quantity: 1, price: 799 },
-    ],
-    total: 3298,
-    status: "pending",
-    deliveryAddress: "Tower B, Floor 3, Flat 301",
-    createdAt: "2024-01-22",
-    updatedAt: "2024-01-22",
-    agentId: null,
-  },
-]
 
 // Helper function to check authentication and role
-async function checkAuth(requiredRoles: string[] = []) {
-  const authToken = cookies().get("auth_token")?.value
+export async function checkAuth(requiredRoles: string[] = []): Promise<AuthResult> {
+  const authResult = await getCurrentUser()
 
-  if (!authToken) {
-    return { authenticated: false }
+  if (!authResult.authenticated) {
+    return authResult
   }
 
-  // In a real app, you would verify the token with your auth system
-  const userId = authToken.replace("token_", "")
-
-  // Mock user lookup
-  const users = [
-    { id: "user-1", role: "resident" },
-    { id: "user-2", role: "agent" },
-    { id: "user-3", role: "admin" },
-    { id: "user-4", role: "resident" },
-  ]
-
-  const user = users.find((u) => u.id === userId)
-
-  if (!user) {
-    return { authenticated: false }
+  if (requiredRoles.length > 0 && !requiredRoles.includes(authResult.user.role)) {
+    return {
+      authenticated: true,
+      authorized: false,
+      user: authResult.user,
+      error: "Insufficient permissions",
+    }
   }
 
-  // Check if user has required role
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-    return { authenticated: true, authorized: false, user }
+  return {
+    authenticated: true,
+    authorized: true,
+    user: authResult.user,
   }
-
-  return { authenticated: true, authorized: true, user }
 }
-
 // GET a specific order
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const auth = await checkAuth()
@@ -90,10 +38,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 
   const orderId = params.id
-  const order = orders.find((o) => o.id === orderId)
-
-  if (!order) {
-    return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
+  let order = null
+  try {
+    const db = await getDatabase()
+    order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) })
+    if (!order) {
+      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
+    }
+  } catch (e) {
+    return NextResponse.json({ success: false, message: "Invalid order ID" }, { status: 400 })
   }
 
   // Check if user has access to this order
@@ -105,7 +58,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 })
   }
 
-  return NextResponse.json({ success: true, order })
+  return NextResponse.json({ success: true, order: sanitizeOrder(order) })
 }
 
 // PUT (update) an order status (agent or admin only)
@@ -123,13 +76,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
   const orderId = params.id
-  const orderIndex = orders.findIndex((o) => o.id === orderId)
-
-  if (orderIndex === -1) {
-    return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
-  }
-
+  let order = null
   try {
+    const db = await getDatabase()
+    order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) })
+    if (!order) {
+      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
+    }
+
     const body = await request.json()
 
     // Validate status
@@ -144,22 +98,24 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       )
     }
 
-    // Update order
-    const updatedOrder = {
-      ...orders[orderIndex],
+    // Prepare update
+    const updateDoc: any = {
       ...body,
-      updatedAt: new Date().toISOString().split("T")[0],
+      updatedAt: new Date(),
     }
-
     // If agent is accepting the order, assign themselves
-    if (auth.user.role === "agent" && body.status === "processing" && !updatedOrder.agentId) {
-      updatedOrder.agentId = auth.user.id
+    if (auth.user.role === "agent" && body.status === "processing" && !order.agentId) {
+      updateDoc.agentId = auth.user.id
     }
 
-    // In a real app, you would update the database here
-    orders[orderIndex] = updatedOrder
+    await db.collection("orders").updateOne(
+      { _id: new ObjectId(orderId) },
+      { $set: updateDoc }
+    )
 
-    return NextResponse.json({ success: true, order: updatedOrder })
+    // Fetch the updated order
+    const updatedOrder = await db.collection("orders").findOne({ _id: new ObjectId(orderId) })
+    return NextResponse.json({ success: true, order: sanitizeOrder(updatedOrder) })
   } catch (error) {
     console.error("Update order error:", error)
     return NextResponse.json({ success: false, message: "Failed to update order" }, { status: 500 })
