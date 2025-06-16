@@ -157,17 +157,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       console.error("Invalid ObjectId conversion:", params.id, e);
       return NextResponse.json({ success: false, message: "Invalid product ID format" }, { status: 400 });
     }
-
     const result = await db.collection("products").findOneAndUpdate(
       { _id: objectId },
       { $set: update },
       { returnDocument: "after" }
     );
     console.log("[PUT /api/products/[id]] update result:", result);
-    if (!result.value) {
+    if (!result._id) {
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     }
-    return NextResponse.json({ success: true, product: sanitizeProduct(result.value) });
+    return NextResponse.json({ success: true, product: sanitizeProduct(result) });
   } catch (error) {
     console.error("Update product error:", error);
     return NextResponse.json({ success: false, message: "Failed to update product" }, { status: 500 });
