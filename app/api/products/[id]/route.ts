@@ -134,17 +134,24 @@ async function checkAuth(requiredRoles: string[] = []) {
   return { authenticated: true, authorized: true, user }
 }
 
+import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import { sanitizeProduct } from "@/lib/models/product";
+
 // GET a specific product
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const productId = params.id
-  const product = products.find((p) => p.id === productId)
-
-  if (!product) {
-    return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 })
+  try {
+    const db = await getDatabase();
+    const product = await db.collection("products").findOne({ _id: new ObjectId(params.id), status: "active" });
+    if (!product) {
+      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, product: sanitizeProduct(product) });
+  } catch (error) {
+    return NextResponse.json({ success: false, message: "Invalid product ID" }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true, product })
 }
+
 
 // PUT (update) a product (agent or admin only)
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
