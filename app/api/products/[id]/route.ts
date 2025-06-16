@@ -101,38 +101,7 @@ const products = [
   },
 ]
 
-// Helper function to check authentication and role
-async function checkAuth(requiredRoles: string[] = []) {
-  const authToken = cookies().get("auth_token")?.value
-
-  if (!authToken) {
-    return { authenticated: false }
-  }
-
-  // In a real app, you would verify the token with your auth system
-  const userId = authToken.replace("token_", "")
-
-  // Mock user lookup
-  const users = [
-    { id: "user-1", role: "resident" },
-    { id: "user-2", role: "agent" },
-    { id: "user-3", role: "admin" },
-    { id: "user-4", role: "resident" },
-  ]
-
-  const user = users.find((u) => u.id === userId)
-
-  if (!user) {
-    return { authenticated: false }
-  }
-
-  // Check if user has required role
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-    return { authenticated: true, authorized: false, user }
-  }
-
-  return { authenticated: true, authorized: true, user }
-}
+import { checkAuth } from "@/lib/auth";
 
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -152,10 +121,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-
 // PUT (update) a product (agent or admin only)
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const auth = await checkAuth(["agent", "admin"])
+  const auth = await checkAuth(["agent", "admin"]);
 
   if (!auth.authenticated || !auth.authorized) {
     return NextResponse.json(
@@ -164,39 +132,51 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         message: !auth.authenticated ? "Unauthenticated" : "Unauthorized",
       },
       { status: !auth.authenticated ? 401 : 403 },
-    )
-  }
-
-  const productId = params.id
-  const productIndex = products.findIndex((p) => p.id === productId)
-
-  if (productIndex === -1) {
-    return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 })
+    );
   }
 
   try {
-    const body = await request.json()
+    const db = await getDatabase();
+    const body = await request.json();
+    // Only allow certain fields to be updated
+    const allowedFields = ["name", "description", "price", "images", "category", "stock", "status"];
+    const update: any = {};
+    for (const key of allowedFields) {
+      if (body[key] !== undefined) {
+        update[key] = body[key];
+      }
+    }
+    update.updatedAt = new Date();
 
-    // Update product
-    const updatedProduct = {
-      ...products[productIndex],
-      ...body,
-      updatedAt: new Date().toISOString().split("T")[0],
+    // Debug info
+    console.log("[PUT /api/products/[id]] params.id:", params.id);
+    let objectId;
+    try {
+      objectId = new ObjectId(params.id);
+    } catch (e) {
+      console.error("Invalid ObjectId conversion:", params.id, e);
+      return NextResponse.json({ success: false, message: "Invalid product ID format" }, { status: 400 });
     }
 
-    // In a real app, you would update the database here
-    products[productIndex] = updatedProduct
-
-    return NextResponse.json({ success: true, product: updatedProduct })
+    const result = await db.collection("products").findOneAndUpdate(
+      { _id: objectId },
+      { $set: update },
+      { returnDocument: "after" }
+    );
+    console.log("[PUT /api/products/[id]] update result:", result);
+    if (!result.value) {
+      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, product: sanitizeProduct(result.value) });
   } catch (error) {
-    console.error("Update product error:", error)
-    return NextResponse.json({ success: false, message: "Failed to update product" }, { status: 500 })
+    console.error("Update product error:", error);
+    return NextResponse.json({ success: false, message: "Failed to update product" }, { status: 500 });
   }
 }
 
 // DELETE a product (agent or admin only)
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const auth = await checkAuth(["agent", "admin"])
+  const auth = await checkAuth(["agent", "admin"]);
 
   if (!auth.authenticated || !auth.authorized) {
     return NextResponse.json(
@@ -205,18 +185,18 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         message: !auth.authenticated ? "Unauthenticated" : "Unauthorized",
       },
       { status: !auth.authenticated ? 401 : 403 },
-    )
+    );
   }
 
-  const productId = params.id
-  const productIndex = products.findIndex((p) => p.id === productId)
-
-  if (productIndex === -1) {
-    return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 })
+  try {
+    const db = await getDatabase();
+    const result = await db.collection("products").deleteOne({ _id: new ObjectId(params.id) });
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete product error:", error);
+    return NextResponse.json({ success: false, message: "Failed to delete product" }, { status: 500 });
   }
-
-  // In a real app, you would delete from the database or mark as deleted
-  const deletedProduct = products.splice(productIndex, 1)[0]
-
-  return NextResponse.json({ success: true, product: deletedProduct })
 }
