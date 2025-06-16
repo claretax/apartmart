@@ -157,6 +157,10 @@ export default function LoginPage() {
                     </div>
                   </div>
                 </div>
+                <div className="mt-6 text-center">
+                  <span className="text-white/60">Don't have an account?</span>
+                  <a href="/auth/signup" className="ml-2 text-emerald-300 hover:underline">Sign Up</a>
+                </div>
               </div>
             </CardContent>
           </Card>
