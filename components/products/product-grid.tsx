@@ -62,16 +62,16 @@ export function ProductGrid({ category, searchQuery }: ProductGridProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="bg-white/5 backdrop-blur-xl rounded-xl shadow-lg p-4 animate-pulse border border-white/10"
+            className="bg-white/5 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 animate-pulse border border-white/10"
           >
-            <div className="bg-white/10 h-48 rounded-lg mb-4"></div>
-            <div className="bg-white/10 h-4 rounded mb-2"></div>
-            <div className="bg-white/10 h-3 rounded mb-4"></div>
-            <div className="bg-white/10 h-6 rounded w-20"></div>
+            <div className="bg-white/10 h-40 sm:h-48 rounded-lg mb-3 sm:mb-4"></div>
+            <div className="bg-white/10 h-3 sm:h-4 rounded mb-2"></div>
+            <div className="bg-white/10 h-2 sm:h-3 rounded mb-3 sm:mb-4"></div>
+            <div className="bg-white/10 h-5 sm:h-6 rounded w-16 sm:w-20"></div>
           </div>
         ))}
       </div>
@@ -80,20 +80,20 @@ export function ProductGrid({ category, searchQuery }: ProductGridProps) {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-white/80">No products found matching your criteria.</p>
+      <div className="text-center py-8 sm:py-12 px-4">
+        <p className="text-white/80 text-sm sm:text-base">No products found matching your criteria.</p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0">
       {products.map((product, index) => (
         <motion.div
           key={product.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: index * 0.1 }}
+          transition={{ duration: 0.4, delay: index * 0.05 }}
         >
           <ProductCard product={product} />
         </motion.div>
