@@ -39,7 +39,20 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
 
   const handleCheckout = async () => {
     if (!user) {
-      handleLoginRedirect()
+      toast({
+        title: "Login required",
+        description: "Please login to place your order. Your cart will be saved.",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoginRedirect}
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            Login
+          </Button>
+        ),
+      })
       return
     }
 
@@ -59,6 +72,21 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           description: `Your order of ₹${totalPrice.toLocaleString("en-IN")} has been placed and will be delivered to your apartment.`,
         })
         onClose()
+      } else if (result.requiresLogin) {
+        toast({
+          title: "Login required",
+          description: result.message || "Please login to place your order",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoginRedirect}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              Login
+            </Button>
+          ),
+        })
       } else {
         toast({
           title: "Checkout failed",
@@ -173,9 +201,11 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                   <div className="p-3 sm:p-4 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
                     <div className="flex items-center space-x-3">
                       <LogIn className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-white font-medium text-sm sm:text-base">Login Required</p>
-                        <p className="text-white/60 text-xs sm:text-sm">Please login to place your order</p>
+                      <div className="flex-1">
+                        <p className="text-white font-medium text-sm sm:text-base">Ready to checkout?</p>
+                        <p className="text-white/60 text-xs sm:text-sm">
+                          Login to place your order - your cart will be saved!
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -27,7 +27,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     addItem({
       id: product.id,
       name: product.name,
@@ -48,11 +51,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
     if (!user) {
       toast({
-        title: "Login required",
-        description: "Please login to add items to your wishlist",
+        title: "Login required for wishlist",
+        description: "Please login to save items to your wishlist",
         variant: "destructive",
       })
-      router.push("/auth/login")
       return
     }
 
@@ -181,11 +183,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <motion.div whileTap={{ scale: 0.97 }}>
             <Button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleAddToCart()
-              }}
+              onClick={handleAddToCart}
               className="w-full mt-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0 shadow-lg shadow-emerald-500/20 h-9 sm:h-10 text-sm sm:text-base touch-target"
               disabled={product.stock === 0}
             >

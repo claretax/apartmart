@@ -19,7 +19,9 @@ interface CartContextType {
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
-  checkout: (deliveryAddress: string) => Promise<{ success: boolean; orderId?: string; message?: string }>
+  checkout: (
+    deliveryAddress: string,
+  ) => Promise<{ success: boolean; orderId?: string; message?: string; requiresLogin?: boolean }>
   totalItems: number
   totalPrice: number
 }
@@ -71,7 +73,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const checkout = async (deliveryAddress: string) => {
     if (!user) {
-      return { success: false, message: "You must be logged in to checkout" }
+      return {
+        success: false,
+        message: "Please login to place your order. Your cart items will be saved.",
+        requiresLogin: true,
+      }
     }
 
     if (items.length === 0) {
