@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { MainLayout } from "@/components/layout/main-layout"
 import { useCart } from "@/components/providers/cart-provider"
 import { useToast } from "@/hooks/use-toast"
 import { ShoppingCart, Heart, ChevronLeft, ChevronRight, ArrowLeft, Plus, Minus } from "lucide-react"
@@ -67,8 +68,8 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 text-white p-6">
-        <div className="max-w-6xl mx-auto">
+      <MainLayout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 w-32 bg-white/10 rounded mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -83,35 +84,35 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 text-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <Link href="/dashboard" className="flex items-center text-white/70 hover:text-white mb-8">
+      <MainLayout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Link href="/products" className="flex items-center text-white/70 hover:text-white mb-8">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Back to Products
           </Link>
           <div className="text-center py-12">
             <p className="text-white/80 text-xl">Product not found</p>
             <Button asChild className="mt-4">
-              <Link href="/dashboard">Return to Dashboard</Link>
+              <Link href="/products">Return to Products</Link>
             </Button>
           </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        <Link href="/dashboard" className="flex items-center text-white/70 hover:text-white mb-8">
+    <MainLayout className="pb-20 lg:pb-0">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Link href="/products" className="flex items-center text-white/70 hover:text-white mb-8">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          Back to Products
         </Link>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -255,6 +256,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }

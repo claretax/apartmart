@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useCart } from "@/components/providers/cart-provider"
+import { CartSidebar } from "@/components/cart/cart-sidebar"
 import { Menu, Home, ShoppingBag, User, Settings, LogOut, ShoppingCart, Heart, Package, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
@@ -16,6 +17,7 @@ export function MobileNav() {
   const router = useRouter()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -143,7 +145,12 @@ export function MobileNav() {
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 relative">
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 relative"
+              onClick={() => setIsCartOpen(true)}
+            >
               <ShoppingCart className="h-5 w-5" />
               {items.length > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center p-0">
@@ -186,6 +193,9 @@ export function MobileNav() {
           )}
         </div>
       </nav>
+
+      {/* Cart Sidebar */}
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   )
 }
