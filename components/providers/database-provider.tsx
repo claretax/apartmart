@@ -11,30 +11,9 @@ interface DatabaseContextType {
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined)
 
 export function DatabaseProvider({ children }: { children: React.ReactNode }) {
-  const [isDummyMode, setIsDummyMode] = useState(true) // Default to dummy mode for demo
-  const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "checking">("checking")
-
-  useEffect(() => {
-    // Simulate database connection check
-    const checkConnection = async () => {
-      setConnectionStatus("checking")
-
-      try {
-        // Simulate connection attempt
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        // For demo purposes, we'll stay in dummy mode
-        // In real implementation, this would check actual database connectivity
-        setIsDummyMode(true)
-        setConnectionStatus("disconnected")
-      } catch (error) {
-        setIsDummyMode(true)
-        setConnectionStatus("disconnected")
-      }
-    }
-
-    checkConnection()
-  }, [])
+  // Demo mode disabled: always use real mode
+  const [isDummyMode] = useState(false)
+  const [connectionStatus] = useState<"connected" | "disconnected" | "checking">("connected")
 
   return <DatabaseContext.Provider value={{ isDummyMode, connectionStatus }}>{children}</DatabaseContext.Provider>
 }
