@@ -134,33 +134,9 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 rounded-lg bg-white/5 border border-white/10">
-                <h3 className="text-sm font-medium text-white/80 mb-3">Demo Credentials:</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">Resident:</span>
-                    <div className="flex space-x-2">
-                      <Badge className="bg-blue-500/20 text-blue-300 border-0">demo / demo123</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">Agent:</span>
-                    <div className="flex space-x-2">
-                      <Badge className="bg-purple-500/20 text-purple-300 border-0">agent / agent123</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">Admin:</span>
-                    <div className="flex space-x-2">
-                      <Badge className="bg-red-500/20 text-red-300 border-0">admin / admin123</Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 text-center">
-                  <span className="text-white/60">Don't have an account?</span>
-                  <a href="/auth/signup" className="ml-2 text-emerald-300 hover:underline">Sign Up</a>
-                </div>
+              <div className="mt-6 text-center">
+                <span className="text-white/60">Don't have an account?</span>
+                <Link href="/auth/signup" className="ml-2 text-emerald-300 hover:underline">Sign Up</Link>
               </div>
             </CardContent>
           </Card>
