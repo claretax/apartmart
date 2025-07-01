@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+// Cloudinary constants
+const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dvyursf9f/image/upload";
+const CLOUDINARY_UPLOAD_PRESET = "products"; // unsigned preset
+
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -271,14 +276,37 @@ export function ProductManagement() {
     })
   }
 
-  const handleAddImage = () => {
-    // In a real app, this would upload the image to a server
-    // For now, we'll just add a placeholder
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, "/placeholder.svg?height=200&width=200"],
-    }))
+  // Handles file selection and upload to Cloudinary
+const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const formDataCloud = new FormData();
+  formDataCloud.append("file", file);
+  formDataCloud.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  try {
+    const res = await fetch(CLOUDINARY_UPLOAD_URL, {
+      method: "POST",
+      body: formDataCloud,
+    });
+    const data = await res.json();
+    if (data.secure_url) {
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, data.secure_url],
+      }));
+    }
+  } catch (err) {
+    console.error("Cloudinary upload failed", err);
+  } finally {
+    // Reset the file input value so the same file can be selected again if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
+};
+
+// Triggers file input click
+const triggerFileInput = () => {
+  if (fileInputRef.current) fileInputRef.current.click();
+};
 
   const handleRemoveImage = (index: number) => {
     setFormData((prev) => ({
@@ -553,13 +581,20 @@ export function ProductManagement() {
                     </button>
                   </div>
                 ))}
-                <button
-                  type="button"
-                  onClick={handleAddImage}
-                  className="h-20 w-20 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/30 transition-colors"
-                >
-                  <ImageIcon className="h-6 w-6" />
-                </button>
+                <input
+  type="file"
+  accept="image/*"
+  className="hidden"
+  ref={fileInputRef}
+  onChange={handleAddImage}
+/>
+<button
+  type="button"
+  onClick={triggerFileInput}
+  className="h-20 w-20 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/30 transition-colors"
+>
+  <ImageIcon className="h-6 w-6" />
+</button>
               </div>
               <p className="text-xs text-white/40 mt-1">In a real app, you would be able to upload images here.</p>
             </div>
