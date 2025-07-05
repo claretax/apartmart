@@ -91,6 +91,29 @@ export default function HomePage() {
               </Button>
             </motion.div>
 
+            {/* Featured Products */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Featured Products</h2>
+                  <p className="text-xl text-white/70">Discover our most popular items</p>
+                </div>
+
+                <ProductGrid limit={8} searchQuery={searchQuery} />
+
+                <div className="text-center mt-12">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 border-white/10 text-white hover:bg-white/20"
+                  >
+                    <Link href="/products">View All Products</Link>
+                  </Button>
+                </div>
+              </div>
+            </section>
+
             {/* Stats */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -172,29 +195,6 @@ export default function HomePage() {
                   </Card>
                 </motion.div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Products */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Featured Products</h2>
-              <p className="text-xl text-white/70">Discover our most popular items</p>
-            </div>
-
-            <ProductGrid limit={8} searchQuery={searchQuery} />
-
-            <div className="text-center mt-12">
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="bg-white/10 border-white/10 text-white hover:bg-white/20"
-              >
-                <Link href="/products">View All Products</Link>
-              </Button>
             </div>
           </div>
         </section>
