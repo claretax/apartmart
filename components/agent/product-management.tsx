@@ -55,6 +55,7 @@ export function ProductManagement() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [processingProduct, setProcessingProduct] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState("") // Added state for image URL
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -262,6 +263,7 @@ export function ProductManagement() {
       category: "Stationery",
       images: ["/placeholder.svg?height=200&width=200"],
     })
+    setImageUrl("") // Reset image URL
   }
 
   const openEditDialog = (product: Product) => {
@@ -277,42 +279,89 @@ export function ProductManagement() {
   }
 
   // Handles file selection and upload to Cloudinary
-const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const formDataCloud = new FormData();
-  formDataCloud.append("file", file);
-  formDataCloud.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-  try {
-    const res = await fetch(CLOUDINARY_UPLOAD_URL, {
-      method: "POST",
-      body: formDataCloud,
-    });
-    const data = await res.json();
-    if (data.secure_url) {
+  const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const formDataCloud = new FormData()
+    formDataCloud.append("file", file)
+    formDataCloud.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+    try {
+      const res = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: "POST",
+        body: formDataCloud,
+      })
+      const data = await res.json()
+      if (data.secure_url) {
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, data.secure_url],
+        }))
+        toast({
+          title: "Success",
+          description: "Image uploaded successfully",
+        })
+      } else {
+        throw new Error("Cloudinary upload failed")
+      }
+    } catch (err) {
+      console.error("Cloudinary upload failed", err)
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      // Reset the file input value so the same file can be selected again if needed
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  // Handles adding image via URL
+  const handleAddImageByUrl = () => {
+    if (!imageUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter an image URL",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Validate URL
+      new URL(imageUrl)
+
+      // Add the URL to the images array
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, data.secure_url],
-      }));
+        images: [...prev.images, imageUrl],
+      }))
+      toast({
+        title: "Success",
+        description: "Image URL added successfully",
+      })
+      setImageUrl("") // Clear the URL input
+    } catch (err) {
+      console.error("Invalid URL:", err)
+      toast({
+        title: "Error",
+        description: "Please enter a valid image URL",
+        variant: "destructive",
+      })
     }
-  } catch (err) {
-    console.error("Cloudinary upload failed", err);
-  } finally {
-    // Reset the file input value so the same file can be selected again if needed
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
-};
 
-// Triggers file input click
-const triggerFileInput = () => {
-  if (fileInputRef.current) fileInputRef.current.click();
-};
-
+  // Handles removing an image
   const handleRemoveImage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }))
+  }
+
+  // Triggers file input click
+  const triggerFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.click()
   }
 
   return (
@@ -471,6 +520,7 @@ const triggerFileInput = () => {
           if (!open) {
             setIsAddProductOpen(false)
             setEditingProduct(null)
+            setImageUrl("") // Reset image URL when closing dialog
           }
         }}
       >
@@ -581,22 +631,43 @@ const triggerFileInput = () => {
                     </button>
                   </div>
                 ))}
-                <input
-  type="file"
-  accept="image/*"
-  className="hidden"
-  ref={fileInputRef}
-  onChange={handleAddImage}
-/>
-<button
-  type="button"
-  onClick={triggerFileInput}
-  className="h-20 w-20 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/30 transition-colors"
->
-  <ImageIcon className="h-6 w-6" />
-</button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleAddImage}
+                    />
+                    <button
+                      type="button"
+                      onClick={triggerFileInput}
+                      className="h-20 w-20 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/30 transition-colors"
+                    >
+                      <ImageIcon className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="Paste image URL"
+                      className="bg-white/10 border-white/10 text-white placeholder:text-white/30 text-sm h-8"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddImageByUrl}
+                      size="sm"
+                      className="bg-cyan-600 hover:bg-cyan-700 text-white h-8"
+                    >
+                      Add URL
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-white/40 mt-1">In a real app, you would be able to upload images here.</p>
+              <p className="text-xs text-white/40 mt-1">Upload images or add image URLs for the product.</p>
             </div>
           </div>
 
@@ -606,6 +677,7 @@ const triggerFileInput = () => {
               onClick={() => {
                 setIsAddProductOpen(false)
                 setEditingProduct(null)
+                setImageUrl("")
               }}
               className="bg-white/10 border-white/10 text-white hover:bg-white/20"
             >
